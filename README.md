@@ -1,58 +1,83 @@
 # Quantum Portfolio Optimizer
 
-**Banc d'essai** d'optimisation de portefeuille : Markowitz (classique) face au recuit simulé et au QAOA simulé — y compris quand l'approche « quantum-inspired » sous-performe.
+Banc d’essai d’**optimisation de portefeuille** : méthode classique (Markowitz) face au **recuit simulé** et au **QAOA simulé**, y compris lorsque l’approche « quantum-inspired » sous-performe.
 
-Tourne entièrement sur matériel classique. **Ce n'est pas un conseil financier.**
+Tout tourne sur un ordinateur classique. **Ce n’est pas un conseil financier** et **aucun ordre réel** n’est passé.
 
-## État d'avancement
-
-- [x] Phase 0 — Mise en place
-- [x] Phase 1 — Baseline Markowitz
-- [x] Phase 2 — Recuit simulé
-- [x] Phase 3 — Backtesting
-- [x] Phase 4 — QAOA + cardinalité + investigation honnête
-- [x] Phase 5 — Interface Streamlit (design papier)
-- [ ] Phase 6 — Finalisation documentation / packaging
-
-## Installation
+## Démarrage rapide
 
 ```bash
 git clone https://github.com/mdavo5270-create/quantum-portfolio-optimizer.git
 cd quantum-portfolio-optimizer
 python -m venv .venv
-source .venv/bin/activate   # Windows : .venv\Scripts\activate
+source .venv/bin/activate          # Windows : .venv\Scripts\activate
 pip install -e .
 pip install -r requirements.txt
-```
 
-## Interface utilisateur
-
-```bash
+# Interface (recommandé)
 streamlit run app/streamlit_app.py
+
+# Tests hors réseau
+pytest -v -m "not network"
 ```
 
-Parcours : **Protocole** → **Verdict** (axe CLASSICAL → EXPERIMENTAL) → **Réplication** (backtest).
+Guide pas à pas (sans jargon) : **[docs/guide_utilisateur.md](docs/guide_utilisateur.md)**
 
-Design : fond papier, typo Fraunces + IBM Plex Sans, disclaimer permanent.  
-Maquette Figma : [QPO UI Design — Phase 5](https://www.figma.com/design/iJbaCAXxY0BWQqWSi9gEAt)
+## Ce que fait l’outil
 
-## Scripts de démo (CLI)
+1. **Protocole** — vous choisissez des actifs, une limite du nombre de titres (cardinalité K), une période, les méthodes à comparer.
+2. **Verdict** — classement et **axe CLASSICAL → EXPERIMENTAL** (avec gestion des scores quasi égaux).
+3. **Réplication** — backtest walk-forward sur d’autres fenêtres historiques.
+
+## Méthodes
+
+| Méthode | Rôle |
+|--------|------|
+| Markowitz | Baseline classique mean-variance |
+| Recuit simulé | Heuristique stochastique, adaptée à la cardinalité |
+| QAOA simulé | Sélection binaire simulée ; **souvent inférieure ici** — [pourquoi](docs/methode_qaoa.md) |
+
+## Structure du dépôt
+
+```
+app/streamlit_app.py     # Interface utilisateur
+src/data/                # Données de marché (yfinance, cache, retry)
+src/classical_baseline/  # Markowitz
+src/optimizer/           # SA, cardinalité, QAOA
+src/backtest/            # Walk-forward + métriques
+examples/                # Démos en ligne de commande
+tests/                   # pytest
+docs/                    # Guides et notes de méthode
+```
+
+## Démos CLI
 
 ```bash
-pytest -v -m "not network"
 python examples/demo_markowitz.py
 python examples/demo_compare_sa_markowitz.py
 python examples/demo_backtest.py
 python examples/demo_cardinality_qaoa.py
 ```
 
+> Après `pip install -e .`, les imports `src` fonctionnent. Chaque script `examples/` ajoute aussi la racine au chemin Python.
+
 ## Documentation
 
-- Markowitz : [`docs/methode_classique_markowitz.md`](docs/methode_classique_markowitz.md)
-- Recuit simulé : [`docs/methode_recuit_simule.md`](docs/methode_recuit_simule.md)
-- QAOA + limites : [`docs/methode_qaoa.md`](docs/methode_qaoa.md)
-- Design UI : [`docs/ui_design_phase5.md`](docs/ui_design_phase5.md)
+| Document | Public |
+|----------|--------|
+| [Guide utilisateur](docs/guide_utilisateur.md) | Non technicien |
+| [Markowitz](docs/methode_classique_markowitz.md) | Méthode |
+| [Recuit simulé](docs/methode_recuit_simule.md) | Méthode |
+| [QAOA + limites](docs/methode_qaoa.md) | Méthode + investigation |
+| [Design UI](docs/ui_design_phase5.md) | Maquette |
+| [CHANGELOG](CHANGELOG.md) | Historique des versions |
+
+Maquette Figma : [QPO UI Design](https://www.figma.com/design/iJbaCAXxY0BWQqWSi9gEAt)
+
+## État du projet
+
+Phases 0 à 6 terminées (mise en place → baseline → SA → backtest → QAOA → interface → finalisation).
 
 ## Licence
 
-MIT — voir `LICENSE`.
+MIT — voir [LICENSE](LICENSE).
