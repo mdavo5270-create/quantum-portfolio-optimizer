@@ -22,10 +22,10 @@
 - [x] Tests unitaires du module optimizer
 
 ## Phase 3 — Backtesting
-- [ ] Moteur de backtesting historique
-- [ ] Calcul des métriques (rendement, volatilité, Sharpe, drawdown)
-- [ ] Rapport visuel comparatif (graphiques)
-- [ ] Test sur au moins 3 périodes historiques différentes
+- [x] Moteur de backtesting historique
+- [x] Calcul des métriques (rendement, volatilité, Sharpe, drawdown)
+- [x] Rapport visuel comparatif (graphiques)
+- [x] Test sur au moins 3 périodes historiques différentes
 
 ## Phase 4 — QAOA simulé
 - [ ] Implémentation QAOA simulé (si Phase 2-3 concluante)
