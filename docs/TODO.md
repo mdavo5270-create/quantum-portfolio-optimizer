@@ -28,20 +28,19 @@
 - [x] Test sur au moins 3 périodes historiques différentes
 
 ## Phase 4 — QAOA simulé
-- [x] Implémentation QAOA simulé (si Phase 2-3 concluante)
+- [x] Implémentation QAOA simulé
 - [x] Comparaison à trois (classique / recuit simulé / QAOA)
-- [x] Documentation de la méthode
-- [x] Univers large (20–30 actifs) + contrainte de cardinalité K
+- [x] Documentation de la méthode (limites incluses)
+- [x] Univers large + contrainte de cardinalité K
 
 ## Phase 5 — Interface utilisateur
-- [x] Interface Streamlit (maquette papier, axe de verdict)
-- [x] Sélection d'actifs et contraintes par l'utilisateur
-- [x] Affichage clair des résultats et comparaisons (y compris sous-perf. QAOA)
-- [x] Visualisation backtest intégrée (Réplication)
+- [x] Interface Streamlit (design papier, axe de verdict)
+- [x] Sélection d'actifs et contraintes sans toucher au code
+- [x] Affichage clair des résultats et comparaisons
 
 ## Phase 6 — Finalisation
-- [ ] README complet et à jour
-- [ ] Documentation utilisateur complète dans docs/
-- [ ] Nettoyage du code et suppression du code mort
-- [ ] Vérification de la reproductibilité depuis un clone frais
-- [ ] CHANGELOG.md à jour, résumant tout le projet
+- [x] README complet et à jour
+- [x] Documentation utilisateur complète dans docs/ (guide_utilisateur.md)
+- [x] Nettoyage (imports, version 1.0.0, dépendances alignées)
+- [x] Vérification de la reproductibilité depuis un clone frais
+- [x] CHANGELOG.md à jour, résumant tout le projet
