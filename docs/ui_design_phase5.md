@@ -1,39 +1,31 @@
-# Phase 5 — Design UI (point de contrôle)
+# Phase 5 — Design UI
 
-**Statut : en attente de validation visuelle avant implémentation Streamlit.**
+**Figma :** [QPO UI Design — Phase 5](https://www.figma.com/design/iJbaCAXxY0BWQqWSi9gEAt)
 
-## Wireframes Excalidraw
+## Direction retenue
 
-Parcours utilisateur en 3 écrans :
+- Fond **papier** `#F3EDE3`, encre `#1C1917` — rapport de banc d'essai, pas dashboard SaaS.
+- Accents : **Classique** `#1F4D3A`, **Recuit** `#9A6B2F`, **Avertissement** `#7A2E2E`.
+- Typo cible : **Fraunces** (titres) + **IBM Plex Sans** (corps/données).
+- Layout vertical type protocole → verdict → preuves → réplication.
 
-1. **Configuration** — sélection d’actifs, contraintes (K, dates, méthodes), bandeau disclaimer, CTA « Lancer l’optimisation »
-2. **Résultats & comparaison** — classement Markowitz / SA / QAOA (y compris sous-performance QAOA visible), poids, note de rigueur
-3. **Backtest** — périodes, courbes d’équité, métriques (Sharpe, MDD, vol), disclaimer
+## Axe de verdict (mix A+B)
 
-Navigation commune + disclaimer **toujours visible** (ambre/rouge, pas gris pale).
+- Continuum CLASSICAL → EXPERIMENTAL.
+- Rang 1/2/3 dans le label.
+- Formes a11y : ■ Markowitz · ◆ SA · ○ QAOA (+ textures de trait).
 
-## Maquette Figma
+### Cas serré (Sharpe quasi égaux)
 
-Fichier : [QPO UI Design — Phase 5](https://www.figma.com/design/iJbaCAXxY0BWQqWSi9gEAt)
+Règle d'implémentation :
+1. Position idéale = f(Sharpe) ; si écart centres < 28px → écarter en préservant l'ordre.
+2. Labels alternés dessus / dessous + tick sur l'axe.
+3. Rang toujours affiché dans le label.
 
-### Direction visuelle
+## Écrans
 
-| Token | Valeur | Intention |
-|-------|--------|-----------|
-| Fond | Navy `#0F172A` | Finance, sérieux |
-| Cartes | `#1A243D` | Profondeur |
-| Accent primaire | Cyan `#38BDF8` | Données, clarté |
-| Accent secondaire | Violet `#8B5CF6` | « Quantum », modernité |
-| Alerte / disclaimer | Ambre `#F59E0B` + rouge | Visibilité obligatoire |
-| Typo | Inter | Professionnelle, lisible |
+1. **Protocole** — conditions de l'expérience
+2. **Verdict** — axe + preuves (QAOA sous-perf. visible)
+3. **Réplication** — backtest multi-fenêtres
 
-### Écrans maquettés
-
-- Design system (swatches)
-- Screen 1 — Configuration
-- Screen 2 — Résultats & comparaison (QAOA classé 3e, note explicite)
-- Screen 3 — Backtest
-
-## Prochaine étape
-
-Après validation de ta part : implémentation Streamlit fidèle à cette maquette (custom CSS, pas le thème par défaut seul).
+Disclaimer permanent (bandeau brique, pas footer gris).
