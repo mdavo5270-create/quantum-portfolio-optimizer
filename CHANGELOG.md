@@ -6,6 +6,15 @@ Le format est inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-15
+
+### Ajouté
+- Module `src/optimizer/simulated_annealing.py` : recuit simulé (max Sharpe / min vol)
+- Fonction `compare_with_markowitz` pour comparaison automatique
+- Tests unitaires du moteur SA + compétitivité vs Markowitz
+- Documentation simple : `docs/methode_recuit_simule.md`
+- Démo comparative : `examples/demo_compare_sa_markowitz.py`
+
 ## [0.2.1] - 2026-08-15
 
 ### Corrigé / Amélioré
