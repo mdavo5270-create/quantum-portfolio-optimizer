@@ -34,9 +34,10 @@
 - [x] Univers large (20–30 actifs) + contrainte de cardinalité K
 
 ## Phase 5 — Interface utilisateur
-- [ ] Interface CLI ou Streamlit simple
-- [ ] Sélection d'actifs et contraintes par l'utilisateur
-- [ ] Affichage clair des résultats et comparaisons
+- [x] Interface Streamlit (maquette papier, axe de verdict)
+- [x] Sélection d'actifs et contraintes par l'utilisateur
+- [x] Affichage clair des résultats et comparaisons (y compris sous-perf. QAOA)
+- [x] Visualisation backtest intégrée (Réplication)
 
 ## Phase 6 — Finalisation
 - [ ] README complet et à jour
