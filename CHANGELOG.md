@@ -6,6 +6,16 @@ Le format est inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-08-15
+
+### Corrigé / Amélioré
+- `market_data.py` : téléchargement **séquentiel** (plus de "database is locked")
+- Retry automatique avec backoff progressif (surtout sur rate-limit Yahoo)
+- Fallback via `Ticker.history()` si `yf.download` échoue
+- Cache local projet (`.yfinance_cache/`) au lieu du cache global partagé
+- `FetchReport` : message clair listant les actifs réussis / échoués avant optimisation
+- Démo `examples/demo_markowitz.py` validée sur AAPL, MSFT, GOOGL, AMZN (4/4)
+
 ## [0.2.0] - 2026-08-15
 
 ### Ajouté
