@@ -10,7 +10,13 @@ Avertissement : ce n'est PAS un conseil financier. Résultats de simulation uniq
 
 from __future__ import annotations
 
-import examples._bootstrap  # noqa: F401  — ajoute la racine au PYTHONPATH
+import sys
+from pathlib import Path
+
+# Garantit l'import de src même sans pip install -e .
+_ROOT = Path(__file__).resolve().parents[1]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
 
 from src.data.market_data import prepare_data
 from src.classical_baseline.markowitz import optimize_from_returns
