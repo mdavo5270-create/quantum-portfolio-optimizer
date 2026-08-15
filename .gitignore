@@ -23,10 +23,7 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-
-# PyInstaller
-*.manifest
-*.spec
+*.egg-info/
 
 # Installer logs
 pip-log.txt
@@ -80,3 +77,4 @@ data/processed/
 *.pkl
 *.parquet
 .yfinance_cache/
+output/
