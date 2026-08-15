@@ -1,0 +1,9 @@
+# Dépendances de base — Phase 0
+pytest>=8.0.0
+
+# À venir (Phase 1+)
+# numpy
+# pandas
+# scipy
+# yfinance
+# matplotlib
