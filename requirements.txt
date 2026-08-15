@@ -1,9 +1,10 @@
-# Dépendances de base — Phase 0
+# Dépendances — Phase 0 + Phase 1
 pytest>=8.0.0
+numpy>=1.26.0
+pandas>=2.1.0
+scipy>=1.11.0
+yfinance>=0.2.40
 
-# À venir (Phase 1+)
-# numpy
-# pandas
-# scipy
-# yfinance
+# À venir (Phase 3+)
 # matplotlib
+# streamlit
