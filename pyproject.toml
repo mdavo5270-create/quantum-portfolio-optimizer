@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "quantum-portfolio-optimizer"
-version = "0.3.0"
-description = "Moteur d'optimisation de portefeuille quantum-inspired (expérimental — pas un conseil financier)"
+version = "1.0.0"
+description = "Banc d'essai d'optimisation de portefeuille quantum-inspired (expérimental — pas un conseil financier)"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
@@ -15,11 +15,12 @@ dependencies = [
     "pandas>=2.1.0",
     "scipy>=1.11.0",
     "yfinance>=0.2.40",
+    "matplotlib>=3.8.0",
+    "streamlit>=1.32.0",
 ]
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0.0"]
-viz = ["matplotlib>=3.8.0"]
 
 [tool.setuptools.packages.find]
 where = ["."]
