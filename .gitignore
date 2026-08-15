@@ -79,3 +79,4 @@ data/raw/
 data/processed/
 *.pkl
 *.parquet
+.yfinance_cache/
