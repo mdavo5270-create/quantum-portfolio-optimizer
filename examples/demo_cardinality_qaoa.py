@@ -6,6 +6,8 @@ Contrainte : au plus K=5 actifs dans le portefeuille
 Exécution :
     python examples/demo_cardinality_qaoa.py
 
+Note : le QAOA peut sous-performer ici — voir docs/methode_qaoa.md (investigation).
+
 Avertissement : ce n'est PAS un conseil financier.
 """
 
@@ -23,7 +25,6 @@ from src.optimizer.cardinality import optimize_cardinality_from_returns
 from src.optimizer.qaoa_portfolio import QAOAConfig, optimize_qaoa_from_returns
 from src.optimizer.simulated_annealing import SAConfig
 
-# Univers diversifié ~25 tickers (tech, santé, finance, conso, industrie, énergie)
 TICKERS = [
     "AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "TSLA", "NFLX",
     "JPM", "BAC", "WFC", "GS",
@@ -33,7 +34,7 @@ TICKERS = [
     "CAT", "BA", "GE",
 ]
 
-K = 5  # nombre max d'actifs dans le portefeuille
+K = 5
 
 
 def _print(label: str, result) -> None:
@@ -74,10 +75,13 @@ def main() -> None:
     )
     _print("Recuit simulé + cardinalité", sa)
 
+    # p=4 + multi-start : meilleure chance de calibration, sans garantir l'optimum
     qaoa = optimize_qaoa_from_returns(
         returns,
         max_assets=K,
-        config=QAOAConfig(p=2, max_assets=K, n_samples=256, seed=42),
+        config=QAOAConfig(
+            p=4, max_assets=K, n_samples=1024, n_restarts=5, seed=42
+        ),
     )
     _print("QAOA simulé + Markowitz sur sous-ensemble", qaoa)
 
@@ -90,7 +94,8 @@ def main() -> None:
     for i, (name, r) in enumerate(ranking, 1):
         print(f"  {i}. {name}: Sharpe={r.sharpe:.3f}  vol={r.volatility:.1%}")
 
-    print("\nAvertissement : ce n'est PAS un conseil financier.")
+    print("\nNote : si le QAOA est derrière, voir docs/methode_qaoa.md (causes structurelles).")
+    print("Avertissement : ce n'est PAS un conseil financier.")
 
 
 if __name__ == "__main__":
