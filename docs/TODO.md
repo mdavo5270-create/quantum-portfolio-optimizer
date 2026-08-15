@@ -28,9 +28,10 @@
 - [x] Test sur au moins 3 périodes historiques différentes
 
 ## Phase 4 — QAOA simulé
-- [ ] Implémentation QAOA simulé (si Phase 2-3 concluante)
-- [ ] Comparaison à trois (classique / recuit simulé / QAOA)
-- [ ] Documentation de la méthode
+- [x] Implémentation QAOA simulé (si Phase 2-3 concluante)
+- [x] Comparaison à trois (classique / recuit simulé / QAOA)
+- [x] Documentation de la méthode
+- [x] Univers large (20–30 actifs) + contrainte de cardinalité K
 
 ## Phase 5 — Interface utilisateur
 - [ ] Interface CLI ou Streamlit simple
