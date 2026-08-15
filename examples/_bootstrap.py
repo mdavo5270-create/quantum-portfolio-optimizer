@@ -1,11 +1,15 @@
 """Ajoute la racine du projet au PYTHONPATH.
 
-Permet de lancer n'importe quel script avec :
-    python examples/xxx.py
-sans ModuleNotFoundError: No module named 'src'.
+Usage dans un script examples/ :
 
-Alternative recommandée (une fois pour toutes) :
-    pip install -e .
+    from pathlib import Path
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    # ou :
+    import runpy
+    runpy.run_path(str(Path(__file__).resolve().parent / "_bootstrap.py"))
+
+Recommandé en plus : pip install -e . (voir README).
 """
 
 from __future__ import annotations
