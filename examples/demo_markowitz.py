@@ -16,10 +16,19 @@ from src.classical_baseline.markowitz import optimize_from_returns
 
 def main() -> None:
     tickers = ["AAPL", "MSFT", "GOOGL", "AMZN"]
-    print("Téléchargement des données (peut prendre quelques secondes)...")
-    prices, returns = prepare_data(tickers, start="2019-01-01")
+    print("Téléchargement des données (séquentiel + retries, peut prendre quelques secondes)...")
+    print()
+
+    prices, returns, report = prepare_data(tickers, start="2019-01-01", verbose=True)
+
+    if not report.succeeded:
+        print("Aucun actif récupéré — impossible de lancer l'optimisation.")
+        return
+
+    print()
     print(f"Période : {returns.index[0].date()} → {returns.index[-1].date()}")
     print(f"Nombre de jours de rendement : {len(returns)}")
+    print(f"Actifs utilisés pour l'optimisation : {list(returns.columns)}")
     print()
 
     print("=== Optimisation Max Sharpe (long-only) ===")
