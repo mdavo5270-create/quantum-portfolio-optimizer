@@ -8,6 +8,8 @@ Avertissement : ce n'est PAS un conseil financier.
 
 from __future__ import annotations
 
+import examples._bootstrap  # noqa: F401  — ajoute la racine au PYTHONPATH
+
 from src.data.market_data import prepare_data
 from src.optimizer.simulated_annealing import SAConfig, compare_with_markowitz
 
