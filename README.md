@@ -10,7 +10,28 @@ Tout tourne sur un ordinateur classique. **Ce n’est pas un conseil financier**
 git clone https://github.com/mdavo5270-create/quantum-portfolio-optimizer.git
 cd quantum-portfolio-optimizer
 python -m venv .venv
-source .venv/bin/activate          # Windows : .venv\Scripts\activate
+```
+
+**Activer l’environnement virtuel (selon votre système) :**
+
+```bash
+# Linux / macOS
+source .venv/bin/activate
+```
+
+```powershell
+# Windows (PowerShell)
+.venv\Scripts\Activate.ps1
+```
+
+```bat
+# Windows (Invite de commandes cmd)
+.venv\Scripts\activate.bat
+```
+
+Puis :
+
+```bash
 pip install -e .
 pip install -r requirements.txt
 
