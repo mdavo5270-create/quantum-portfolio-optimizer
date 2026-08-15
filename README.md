@@ -13,12 +13,10 @@ Cet outil tourne entièrement sur du matériel classique. Il aide à explorer de
 - [x] Phase 0 — Mise en place du projet
 - [x] Phase 1 — Baseline classique (Markowitz)
 - [x] Phase 2 — Moteur quantum-inspired v1 (recuit simulé)
-- [ ] Phase 3 — Backtesting
+- [x] Phase 3 — Backtesting
 - [ ] Phase 4 — QAOA simulé (si pertinent)
 - [ ] Phase 5 — Interface utilisateur simple
 - [ ] Phase 6 — Documentation finale et packaging
-
-Voir `docs/TODO.md` pour le détail des tâches et `CHANGELOG.md` pour l'historique des versions.
 
 ## Installation
 
@@ -27,49 +25,42 @@ git clone https://github.com/mdavo5270-create/quantum-portfolio-optimizer.git
 cd quantum-portfolio-optimizer
 python -m venv .venv
 source .venv/bin/activate   # Windows : .venv\Scripts\activate
+pip install -e .
 pip install -r requirements.txt
 ```
 
+> **Important — imports `src`**  
+> Après `pip install -e .`, le package est enregistré et les scripts fonctionnent.  
+> Chaque script dans `examples/` ajoute aussi automatiquement la racine du projet au `PYTHONPATH`, donc `python examples/demo_xxx.py` fonctionne même sans install éditable.  
+> En CI et en usage normal, préférez toujours `pip install -e .`.
+
 ## Utilisation rapide
 
-### Vérifier l'environnement
 ```bash
+# Environnement
 python -m src.hello_world
-```
 
-### Lancer les tests
-```bash
+# Tests
 pytest -v -m "not network"
-```
 
-### Démonstration Markowitz
-```bash
+# Démos
 python examples/demo_markowitz.py
-```
-
-### Comparaison Markowitz vs recuit simulé
-```bash
 python examples/demo_compare_sa_markowitz.py
+python examples/demo_backtest.py          # 3 périodes + graphiques dans output/backtest/
 ```
-Affiche côte à côte les poids et métriques des deux méthodes sur AAPL, MSFT, GOOGL, AMZN.
 
-## Structure du projet
+## Structure
 
 ```
-quantum-portfolio-optimizer/
-├── examples/
-│   ├── demo_markowitz.py
-│   └── demo_compare_sa_markowitz.py
-├── src/
-│   ├── data/               # yfinance + rendements
-│   ├── classical_baseline/ # Markowitz
-│   ├── optimizer/          # recuit simulé (quantum-inspired)
-│   ├── backtest/
-│   └── visualization/
-├── tests/
-└── docs/
-    ├── methode_classique_markowitz.md
-    └── methode_recuit_simule.md
+examples/          # scripts de démo (lancement direct OK)
+src/
+  data/            # yfinance + rendements
+  classical_baseline/  # Markowitz
+  optimizer/       # recuit simulé
+  backtest/        # walk-forward + métriques
+  visualization/   # graphiques
+tests/
+docs/
 ```
 
 ## Documentation
@@ -79,8 +70,4 @@ quantum-portfolio-optimizer/
 
 ## Licence
 
-MIT — voir le fichier `LICENSE`.
-
-## Contribution
-
-Projet en développement actif. Les tests automatiques (GitHub Actions) doivent passer avant toute fusion.
+MIT — voir `LICENSE`.
