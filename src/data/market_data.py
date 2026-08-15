@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from typing import Sequence
 
+import numpy as np
 import pandas as pd
 import yfinance as yf
 
@@ -96,9 +97,7 @@ def compute_returns(prices: pd.DataFrame, method: str = "log") -> pd.DataFrame:
     DataFrame de rendements (même index/colonnes, première ligne NaN supprimée).
     """
     if method == "log":
-        returns = (prices / prices.shift(1)).apply(lambda x: pd.Series(
-            __import__("numpy").log(x), index=x.index
-        ))
+        returns = np.log(prices / prices.shift(1))
     elif method == "simple":
         returns = prices.pct_change()
     else:
