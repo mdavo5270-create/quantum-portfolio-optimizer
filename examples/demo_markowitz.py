@@ -10,6 +10,8 @@ Avertissement : ce n'est PAS un conseil financier. Résultats de simulation uniq
 
 from __future__ import annotations
 
+import examples._bootstrap  # noqa: F401  — ajoute la racine au PYTHONPATH
+
 from src.data.market_data import prepare_data
 from src.classical_baseline.markowitz import optimize_from_returns
 
