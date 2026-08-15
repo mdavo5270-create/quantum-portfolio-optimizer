@@ -2,15 +2,16 @@
 
 Formulation :
 - Variables binaires x_i ∈ {0,1} : actif i inclus ou non
-- Coût QUBO approximant −Sharpe (via rendement / risque quadratique)
+- Coût QUBO approximant un proxy mean-variance (pas le Sharpe exact)
 - Pénalité pour imposer sum(x) ≈ K
 
 Le QAOA est simulé de façon classique (pas de hardware quantique) :
 - pour n ≤ 16 : état complet (statevector) sur 2^n amplitudes
-- pour n > 16 : échantillonnage variationnel (circuit QAOA approximé par
-  tirages de bitstrings biaisés par les angles γ, β)
+- pour n > 16 : échantillonnage variationnel heuristique
 
 Après sélection des actifs, on repondère avec Markowitz sur le sous-ensemble.
+
+Voir docs/methode_qaoa.md pour les limites mesurées expérimentalement.
 
 Avertissement : expérimental — PAS un conseil financier.
 """
@@ -28,7 +29,6 @@ from src.classical_baseline.markowitz import (
     OptimizationResult,
     maximize_sharpe,
     minimize_volatility,
-    portfolio_performance,
 )
 
 
@@ -42,6 +42,7 @@ class QAOAConfig:
     n_samples: int = 512  # pour le mode sampling (n > 16)
     seed: int | None = 42
     risk_aversion: float = 1.0  # λ dans ret - λ * var
+    n_restarts: int = 5  # multi-start pour la calibration des angles
 
 
 def _build_qubo(
@@ -53,20 +54,16 @@ def _build_qubo(
 ) -> tuple[np.ndarray, np.ndarray]:
     """Construit Q (matrice n×n) et c (linéaire) pour min x^T Q x + c^T x.
 
-    Objectif financier : maximiser μ·x/K - λ x^T Σ x  (proxy equipondéré)
+    Objectif proxy : maximiser μ·x/K - λ x^T Σ x  (équipondéré implicite)
     → minimiser  λ x^T Σ x - μ·x/K
     Contrainte : (sum x_i - K)^2 * penalty
+
+    Attention : ce n'est PAS le ratio de Sharpe avec poids Markowitz optimaux.
     """
     n = len(mu)
-    # Terme variance (quadratique)
     Q = risk_aversion * Sigma.copy()
-    # Pénalité (sum x - K)^2 = sum_i x_i + 2 sum_{i<j} x_i x_j - 2K sum x + K^2
-    # → ajouter penalty sur diagonale et hors diagonale
     Q = Q + penalty * (np.ones((n, n)) - np.eye(n))
-    # Diagonale : variance déjà dedans + penalty pour x_i^2 = x_i
     np.fill_diagonal(Q, np.diag(Q) + penalty)
-
-    # Linéaire : -mu/K - 2*penalty*K  (et +penalty déjà partiellement dans diag pour x_i)
     c = -mu / max(K, 1) - 2.0 * penalty * K + penalty
     return Q, c
 
@@ -80,60 +77,99 @@ def _qaoa_statevector(
     c: np.ndarray,
     p: int,
     rng: np.random.Generator,
+    n_restarts: int = 5,
 ) -> np.ndarray:
     """QAOA exact (statevector) pour n ≤ 16. Retourne les probabilités P(z)."""
     n = len(c)
     dim = 1 << n
 
-    # Coût diagonal
     costs = np.zeros(dim)
     for z in range(dim):
         bits = np.array([(z >> i) & 1 for i in range(n)], dtype=float)
         costs[z] = _bitstring_energy(bits, Q, c)
 
-    # État initial |+>^n
-    state = np.ones(dim, dtype=complex) / np.sqrt(dim)
-
-    def apply_cost(gamma: float) -> None:
-        nonlocal state
-        state = state * np.exp(-1j * gamma * costs)
-
-    def apply_mixer(beta: float) -> None:
-        nonlocal state
-        # Mixer = produit de RX(2β) sur chaque qubit
-        for q in range(n):
-            new = state.copy()
-            bit = 1 << q
-            cB, sB = np.cos(beta), -1j * np.sin(beta)
-            for z in range(dim):
-                z2 = z ^ bit
-                if z < z2:
-                    a, b = state[z], state[z2]
-                    new[z] = cB * a + sB * b
-                    new[z2] = sB * a + cB * b
-            state = new
-
-    def expectation(params: np.ndarray) -> float:
-        nonlocal state
+    def run_circuit(params: np.ndarray) -> np.ndarray:
         state = np.ones(dim, dtype=complex) / np.sqrt(dim)
-        gammas = params[:p]
-        betas = params[p:]
+        gammas, betas = params[:p], params[p:]
+
+        def apply_cost(gamma: float) -> None:
+            nonlocal state
+            state = state * np.exp(-1j * gamma * costs)
+
+        def apply_mixer(beta: float) -> None:
+            nonlocal state
+            for q in range(n):
+                new = state.copy()
+                bit = 1 << q
+                cB, sB = np.cos(beta), -1j * np.sin(beta)
+                for z in range(dim):
+                    z2 = z ^ bit
+                    if z < z2:
+                        a, b = state[z], state[z2]
+                        new[z] = cB * a + sB * b
+                        new[z2] = sB * a + cB * b
+                state = new
+
         for i in range(p):
             apply_cost(gammas[i])
             apply_mixer(betas[i])
+        return state
+
+    def expectation(params: np.ndarray) -> float:
+        state = run_circuit(params)
         probs = np.abs(state) ** 2
         return float(np.dot(probs, costs))
 
-    x0 = rng.uniform(0, 2 * np.pi, size=2 * p)
-    res = minimize(expectation, x0, method="COBYLA", options={"maxiter": 80})
+    best_params = None
+    best_exp = np.inf
+    for _ in range(max(1, n_restarts)):
+        x0 = rng.uniform(0, 2 * np.pi, size=2 * p)
+        res = minimize(expectation, x0, method="COBYLA", options={"maxiter": 100})
+        val = expectation(res.x)
+        if val < best_exp:
+            best_exp = val
+            best_params = res.x
 
-    # Reconstruire l'état final
-    state = np.ones(dim, dtype=complex) / np.sqrt(dim)
-    params = res.x
-    for i in range(p):
-        apply_cost(params[i])
-        apply_mixer(params[p + i])
+    state = run_circuit(best_params)
     return np.abs(state) ** 2
+
+
+def _select_from_probs(
+    probs: np.ndarray,
+    Q: np.ndarray,
+    c: np.ndarray,
+    K: int,
+    top_m: int = 32,
+) -> np.ndarray:
+    """Parmi les bitstrings de poids K, garde ceux à plus haute proba puis
+    choisit la plus basse énergie QUBO (meilleur proxy).
+    """
+    n = len(c)
+    dim = len(probs)
+    candidates: list[tuple[float, float, int]] = []  # (-prob, energy, z)
+    for z in range(dim):
+        bits = [(z >> i) & 1 for i in range(n)]
+        if sum(bits) != K:
+            continue
+        candidates.append((-probs[z], _bitstring_energy(np.array(bits, dtype=float), Q, c), z))
+
+    if not candidates:
+        # fallback énergie pure
+        best_e, best_z = np.inf, 0
+        for z in range(dim):
+            bits = np.array([(z >> i) & 1 for i in range(n)], dtype=float)
+            if bits.sum() != K:
+                continue
+            e = _bitstring_energy(bits, Q, c)
+            if e < best_e:
+                best_e, best_z = e, z
+        return np.array([(best_z >> i) & 1 for i in range(n)], dtype=bool)
+
+    candidates.sort()  # proba décroissante
+    pool = candidates[: min(top_m, len(candidates))]
+    best = min(pool, key=lambda t: t[1])  # plus basse énergie
+    z = best[2]
+    return np.array([(z >> i) & 1 for i in range(n)], dtype=bool)
 
 
 def _qaoa_sampling(
@@ -143,45 +179,48 @@ def _qaoa_sampling(
     n_samples: int,
     K: int,
     rng: np.random.Generator,
+    n_restarts: int = 5,
 ) -> np.ndarray:
-    """Mode sampling pour n > 16 : optimise γ,β via Monte-Carlo sur bitstrings.
+    """Mode sampling pour n > 16.
 
-    Approximation : on tire des bitstrings de poids de Hamming proche de K,
-    biaisés par un score QUBO et des angles QAOA (heuristique variationnelle).
+    Heuristique variationnelle inspirée QAOA (pas une simulation unitaire exacte).
+    Multi-start + grand nombre d'échantillons améliorent la stabilité mais restent
+    limités par le proxy QUBO.
     """
     n = len(c)
 
     def sample_batch(params: np.ndarray, m: int) -> tuple[np.ndarray, np.ndarray]:
-        # Heuristique : probabilités d'inclusion liées à -c_i (attrait linéaire)
         gammas = params[:p]
         betas = params[p:]
-        # Score d'inclusion
-        score = -c + 0.1 * rng.normal(size=n)
+        score = -c + 0.05 * rng.normal(size=n)
         for g, b in zip(gammas, betas):
-            score = score * np.cos(b) - g * np.diag(Q)
+            score = score * (0.5 + 0.5 * np.cos(b)) - 0.1 * g * np.diag(Q)
         logits = score - score.max()
-        probs = np.exp(logits) / np.exp(logits).sum()
+        probs = np.exp(logits)
+        probs = probs / probs.sum()
         xs = np.zeros((m, n))
         for i in range(m):
-            # Échantillonner exactement K actifs selon probs
             idx = rng.choice(n, size=min(K, n), replace=False, p=probs)
             xs[i, idx] = 1.0
         energies = np.array([_bitstring_energy(xs[i], Q, c) for i in range(m)])
         return xs, energies
 
     def expectation(params: np.ndarray) -> float:
-        _, energies = sample_batch(params, min(64, n_samples))
+        _, energies = sample_batch(params, min(96, n_samples))
         return float(energies.mean())
 
-    x0 = rng.uniform(0, np.pi, size=2 * p)
-    minimize(expectation, x0, method="COBYLA", options={"maxiter": 40})
+    best_params = None
+    best_exp = np.inf
+    for _ in range(max(1, n_restarts)):
+        x0 = rng.uniform(0, np.pi, size=2 * p)
+        res = minimize(expectation, x0, method="COBYLA", options={"maxiter": 60})
+        val = expectation(res.x)
+        if val < best_exp:
+            best_exp = val
+            best_params = res.x
 
-    # Échantillon final plus large avec meilleurs params (re-opt déjà fait)
-    # On relance un dernier batch avec x0 affiné
-    res = minimize(expectation, x0, method="COBYLA", options={"maxiter": 30})
-    xs, energies = sample_batch(res.x, n_samples)
-    best = xs[int(np.argmin(energies))]
-    return best
+    xs, energies = sample_batch(best_params, n_samples)
+    return xs[int(np.argmin(energies))]
 
 
 def qaoa_select_and_weight(
@@ -206,31 +245,14 @@ def qaoa_select_and_weight(
     Q, c = _build_qubo(mu, Sigma, K, cfg.penalty, cfg.risk_aversion)
 
     if n <= 16:
-        probs = _qaoa_statevector(Q, c, cfg.p, rng)
-        # Parmi les bitstrings de poids K, prendre le plus probable
-        best_z, best_p = -1, -1.0
-        for z in range(1 << n):
-            bits = [(z >> i) & 1 for i in range(n)]
-            if sum(bits) == K and probs[z] > best_p:
-                best_p = probs[z]
-                best_z = z
-        if best_z < 0:
-            # fallback : meilleur coût parmi Hamming weight K
-            best_e = np.inf
-            for z in range(1 << n):
-                bits = np.array([(z >> i) & 1 for i in range(n)], dtype=float)
-                if bits.sum() != K:
-                    continue
-                e = _bitstring_energy(bits, Q, c)
-                if e < best_e:
-                    best_e = e
-                    best_z = z
-        selection = np.array([(best_z >> i) & 1 for i in range(n)], dtype=bool)
+        probs = _qaoa_statevector(Q, c, cfg.p, rng, n_restarts=cfg.n_restarts)
+        selection = _select_from_probs(probs, Q, c, K)
         mode = "statevector"
     else:
-        best_bits = _qaoa_sampling(Q, c, cfg.p, cfg.n_samples, K, rng)
+        best_bits = _qaoa_sampling(
+            Q, c, cfg.p, cfg.n_samples, K, rng, n_restarts=cfg.n_restarts
+        )
         selection = best_bits.astype(bool)
-        # Forcer exactement K
         if selection.sum() != K:
             scores = mu - cfg.risk_aversion * np.diag(Sigma)
             order = np.argsort(scores)[::-1]
@@ -240,7 +262,6 @@ def qaoa_select_and_weight(
 
     selected = [assets[i] for i in range(n) if selection[i]]
     if len(selected) < 2:
-        # Fallback : top K par rendement moyen
         order = np.argsort(mu)[::-1][:K]
         selected = [assets[i] for i in order]
 
@@ -260,7 +281,10 @@ def qaoa_select_and_weight(
         volatility=sub_res.volatility,
         sharpe=sub_res.sharpe,
         success=True,
-        message=f"QAOA-{mode} p={cfg.p} K={K} selected={selected}",
+        message=(
+            f"QAOA-{mode} p={cfg.p} restarts={cfg.n_restarts} "
+            f"K={K} selected={selected}"
+        ),
     )
 
 
