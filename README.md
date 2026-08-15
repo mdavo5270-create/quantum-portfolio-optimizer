@@ -12,7 +12,7 @@ Cet outil tourne entièrement sur du matériel classique. Il aide à explorer de
 
 - [x] Phase 0 — Mise en place du projet
 - [x] Phase 1 — Baseline classique (Markowitz)
-- [ ] Phase 2 — Moteur quantum-inspired v1 (recuit simulé)
+- [x] Phase 2 — Moteur quantum-inspired v1 (recuit simulé)
 - [ ] Phase 3 — Backtesting
 - [ ] Phase 4 — QAOA simulé (si pertinent)
 - [ ] Phase 5 — Interface utilisateur simple
@@ -39,43 +39,43 @@ python -m src.hello_world
 
 ### Lancer les tests
 ```bash
-pytest -v
+pytest -v -m "not network"
 ```
 
-### Démonstration Markowitz (4 actions réelles)
+### Démonstration Markowitz
 ```bash
 python examples/demo_markowitz.py
 ```
-Télécharge l'historique d'AAPL, MSFT, GOOGL et AMZN puis affiche les poids optimaux (max Sharpe et min volatilité).
+
+### Comparaison Markowitz vs recuit simulé
+```bash
+python examples/demo_compare_sa_markowitz.py
+```
+Affiche côte à côte les poids et métriques des deux méthodes sur AAPL, MSFT, GOOGL, AMZN.
 
 ## Structure du projet
 
 ```
 quantum-portfolio-optimizer/
-├── README.md
-├── CHANGELOG.md
-├── LICENSE
-├── .env.example
-├── .gitignore
-├── requirements.txt
 ├── examples/
-│   └── demo_markowitz.py
+│   ├── demo_markowitz.py
+│   └── demo_compare_sa_markowitz.py
 ├── src/
-│   ├── data/               # récupération yfinance + rendements
-│   ├── classical_baseline/ # Markowitz (max Sharpe / min vol)
-│   ├── optimizer/          # (Phase 2) quantum-inspired
+│   ├── data/               # yfinance + rendements
+│   ├── classical_baseline/ # Markowitz
+│   ├── optimizer/          # recuit simulé (quantum-inspired)
 │   ├── backtest/
 │   └── visualization/
 ├── tests/
-├── notebooks/
 └── docs/
-    ├── TODO.md
-    └── methode_classique_markowitz.md
+    ├── methode_classique_markowitz.md
+    └── methode_recuit_simule.md
 ```
 
 ## Documentation
 
-- Explication simple de Markowitz : [`docs/methode_classique_markowitz.md`](docs/methode_classique_markowitz.md)
+- Markowitz : [`docs/methode_classique_markowitz.md`](docs/methode_classique_markowitz.md)
+- Recuit simulé : [`docs/methode_recuit_simule.md`](docs/methode_recuit_simule.md)
 
 ## Licence
 
