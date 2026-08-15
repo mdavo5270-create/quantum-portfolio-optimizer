@@ -19,9 +19,25 @@ cd quantum-portfolio-optimizer
 python -m venv .venv
 ```
 
-3. Activez l’environnement :
-   - macOS / Linux : `source .venv/bin/activate`
-   - Windows : `.venv\Scripts\activate`
+3. **Activez l’environnement virtuel** (une seule des commandes, selon votre système) :
+
+```bash
+# Linux / macOS
+source .venv/bin/activate
+```
+
+```powershell
+# Windows (PowerShell)
+.venv\Scripts\Activate.ps1
+```
+
+```bat
+# Windows (Invite de commandes cmd)
+.venv\Scripts\activate.bat
+```
+
+Sous PowerShell, si l’exécution de scripts est bloquée, lancez une fois :
+`Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`
 
 4. Installez le projet :
 
