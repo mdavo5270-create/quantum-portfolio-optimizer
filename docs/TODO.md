@@ -9,11 +9,11 @@
 - [x] GitHub Actions : pipeline de test automatique de base
 
 ## Phase 1 — Baseline classique
-- [ ] Module de récupération de données de marché (yfinance ou équivalent)
-- [ ] Nettoyage et mise en forme des données (pandas)
-- [ ] Implémentation de l'optimisation Markowitz classique
-- [ ] Test manuel de cohérence sur un petit exemple (3-4 actifs)
-- [ ] Documentation simple de la méthode classique dans docs/
+- [x] Module de récupération de données de marché (yfinance ou équivalent)
+- [x] Nettoyage et mise en forme des données (pandas)
+- [x] Implémentation de l'optimisation Markowitz classique
+- [x] Test manuel de cohérence sur un petit exemple (3-4 actifs)
+- [x] Documentation simple de la méthode classique dans docs/
 
 ## Phase 2 — Moteur quantum-inspired v1
 - [ ] Implémentation du recuit simulé pour l'allocation de portefeuille
