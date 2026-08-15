@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.data.market_data import compute_returns, fetch_prices
+from src.data.market_data import FetchReport, compute_returns, fetch_prices
 
 
 def test_compute_returns_log():
@@ -45,9 +45,24 @@ def test_fetch_prices_empty_list():
         fetch_prices([])
 
 
+def test_fetch_report_summary():
+    report = FetchReport(
+        requested=["A", "B", "C"],
+        succeeded=["A", "B"],
+        failed={"C": "timeout"},
+    )
+    assert not report.all_succeeded
+    text = report.summary()
+    assert "Réussis : 2" in text
+    assert "Échoués : 1" in text
+    assert "A, B" in text
+    assert "C" in text
+
+
 @pytest.mark.network
 def test_fetch_prices_real_smoke():
     """Test optionnel de connectivité (marqué network, non exécuté par défaut)."""
-    prices = fetch_prices(["AAPL"], start="2024-01-01", end="2024-02-01")
+    prices, report = fetch_prices(["AAPL"], start="2024-01-01", end="2024-02-01")
     assert not prices.empty
-    assert "AAPL" in prices.columns or prices.shape[1] == 1
+    assert "AAPL" in report.succeeded
+    assert report.all_succeeded or "AAPL" in prices.columns
