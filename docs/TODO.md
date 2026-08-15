@@ -16,10 +16,10 @@
 - [x] Documentation simple de la méthode classique dans docs/
 
 ## Phase 2 — Moteur quantum-inspired v1
-- [ ] Implémentation du recuit simulé pour l'allocation de portefeuille
-- [ ] Comparaison automatique avec la baseline classique
-- [ ] Documentation simple (langage non technique) de la méthode
-- [ ] Tests unitaires du module optimizer
+- [x] Implémentation du recuit simulé pour l'allocation de portefeuille
+- [x] Comparaison automatique avec la baseline classique
+- [x] Documentation simple (langage non technique) de la méthode
+- [x] Tests unitaires du module optimizer
 
 ## Phase 3 — Backtesting
 - [ ] Moteur de backtesting historique
