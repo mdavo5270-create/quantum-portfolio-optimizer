@@ -32,7 +32,6 @@ from src.optimizer.cardinality import optimize_cardinality_from_returns
 from src.optimizer.qaoa_portfolio import QAOAConfig, optimize_qaoa_from_returns
 from src.optimizer.simulated_annealing import SAConfig
 from src.backtest.engine import run_backtest
-from src.optimizer.simulated_annealing import SAConfig as _SAConfig
 
 # ── Design tokens (maquette) ──────────────────────────────────────────
 PAPER = "#F3EDE3"
@@ -57,9 +56,24 @@ PRESETS = {
 }
 
 METHOD_META = {
-    "markowitz": {"label": "Markowitz", "shape": "square", "color": CLASSIC, "symbol": "■"},
-    "sa": {"label": "Recuit simulé", "shape": "diamond", "color": ANNEAL, "symbol": "◆"},
-    "qaoa": {"label": "QAOA simulé", "shape": "circle", "color": WARN, "symbol": "○"},
+    "markowitz": {
+        "label": "Markowitz",
+        "shape": "square",
+        "color": CLASSIC,
+        "symbol": "■",
+    },
+    "sa": {
+        "label": "Recuit simulé",
+        "shape": "diamond",
+        "color": ANNEAL,
+        "symbol": "◆",
+    },
+    "qaoa": {
+        "label": "QAOA simulé",
+        "shape": "circle",
+        "color": WARN,
+        "symbol": "○",
+    },
 }
 
 
@@ -74,16 +88,12 @@ def inject_css() -> None:
             color: {INK};
             font-family: 'IBM Plex Sans', sans-serif;
         }}
-        h1, h2, h3, .fraunces {{
+        h1, h2, h3 {{
             font-family: 'Fraunces', Georgia, serif !important;
             color: {INK} !important;
             font-weight: 700 !important;
         }}
         .block-container {{ padding-top: 1.5rem; max-width: 960px; }}
-        [data-testid="stSidebar"] {{
-            background-color: {CREAM} !important;
-            border-right: 1px solid {RULE};
-        }}
         .disclaimer {{
             background: #F5EBE8;
             border-top: 2px solid {WARN};
@@ -108,23 +118,6 @@ def inject_css() -> None:
             color: {INK};
             margin: 0.5rem 0 1.25rem 0;
         }}
-        .proof-table {{
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.95rem;
-        }}
-        .proof-table th {{
-            text-align: left;
-            color: {MUTED};
-            font-weight: 500;
-            border-bottom: 1px solid {RULE};
-            padding: 0.4rem 0.5rem;
-        }}
-        .proof-table td {{
-            padding: 0.45rem 0.5rem;
-            border-bottom: 1px solid {RULE};
-            color: {INK};
-        }}
         .marginalia {{
             color: {MUTED};
             font-size: 0.85rem;
@@ -140,7 +133,6 @@ def inject_css() -> None:
             font-family: 'IBM Plex Sans', sans-serif !important;
             font-weight: 600 !important;
         }}
-        /* hide streamlit chrome noise */
         #MainMenu {{ visibility: hidden; }}
         footer {{ visibility: hidden; }}
         header {{ visibility: hidden; }}
@@ -152,7 +144,8 @@ def inject_css() -> None:
 
 def disclaimer() -> None:
     st.markdown(
-        '<div class="disclaimer">Simulation expérimentale — <strong>ce n\'est pas un conseil financier</strong>. '
+        '<div class="disclaimer">Simulation expérimentale — '
+        "<strong>ce n'est pas un conseil financier</strong>. "
         "Aucun ordre réel n'est exécuté. Résultats historiques uniquement.</div>",
         unsafe_allow_html=True,
     )
@@ -160,40 +153,31 @@ def disclaimer() -> None:
 
 def nav(active: str) -> None:
     items = ["Protocole", "Verdict", "Réplication"]
-    parts = []
-    for it in items:
-        if it == active:
-            parts.append(f"<strong>{it}</strong>")
-        else:
-            parts.append(it)
+    parts = [f"<strong>{it}</strong>" if it == active else it for it in items]
     st.markdown(
         f'<div class="nav-line">{"&nbsp;&nbsp;·&nbsp;&nbsp;".join(parts)}</div>',
         unsafe_allow_html=True,
     )
 
 
-def _axis_positions(sharpes: dict[str, float], width: float = 10.0, min_gap: float = 0.45) -> dict[str, float]:
-    """Map Sharpe → x on [0, width], with anti-overlap (order by sharpe desc)."""
-    # Higher Sharpe → more classical (left)
+def _axis_positions(
+    sharpes: dict[str, float], width: float = 10.0, min_gap: float = 0.45
+) -> dict[str, float]:
     ordered = sorted(sharpes.items(), key=lambda kv: -kv[1])
     if not ordered:
         return {}
     vals = np.array([s for _, s in ordered], dtype=float)
     lo, hi = float(vals.min()), float(vals.max())
     span = max(hi - lo, 1e-6)
-    # Map: best → left (0.1*width), worst → right (0.9*width)
     raw = {k: (0.1 + 0.8 * (hi - s) / span) * width for k, s in ordered}
-    # Enforce min gap while preserving order (left to right = best to worst)
     xs = [raw[k] for k, _ in ordered]
     for i in range(1, len(xs)):
         if xs[i] - xs[i - 1] < min_gap:
             xs[i] = xs[i - 1] + min_gap
-    # If overflow, compress from right
     if xs[-1] > width * 0.95:
         overflow = xs[-1] - width * 0.95
         for i in range(len(xs)):
             xs[i] = max(width * 0.05, xs[i] - overflow * (i / max(len(xs) - 1, 1)))
-        # re-enforce gap
         for i in range(1, len(xs)):
             if xs[i] - xs[i - 1] < min_gap:
                 xs[i] = xs[i - 1] + min_gap
@@ -201,7 +185,6 @@ def _axis_positions(sharpes: dict[str, float], width: float = 10.0, min_gap: flo
 
 
 def draw_verdict_axis(results: dict[str, dict]) -> None:
-    """Axe A+B : continuum + rangs + formes a11y + anti-chevauchement."""
     sharpes = {k: v["sharpe"] for k, v in results.items()}
     ranks = {
         k: i + 1
@@ -213,14 +196,12 @@ def draw_verdict_axis(results: dict[str, dict]) -> None:
     fig.patch.set_facecolor(PAPER)
     ax.set_facecolor(PAPER)
 
-    y0 = 0.0
-    ax.plot([0, 10], [y0, y0], color=INK, lw=1.8, solid_capstyle="butt", zorder=1)
+    ax.plot([0, 10], [0.0, 0.0], color=INK, lw=1.8, solid_capstyle="butt", zorder=1)
     ax.plot([0, 0], [-0.15, 0.15], color=INK, lw=1.5)
     ax.plot([10, 10], [-0.15, 0.15], color=INK, lw=1.5)
     ax.text(0, -0.55, "CLASSICAL", fontsize=9, color=CLASSIC, fontweight="600", ha="left")
     ax.text(10, -0.55, "EXPERIMENTAL", fontsize=9, color=ANNEAL, fontweight="600", ha="right")
 
-    # Alternate labels above/below for tight clusters
     for i, (key, x) in enumerate(sorted(positions.items(), key=lambda kv: kv[1])):
         meta = METHOD_META[key]
         color = meta["color"]
@@ -228,10 +209,7 @@ def draw_verdict_axis(results: dict[str, dict]) -> None:
         y_mark = 0.55 if above else -0.85
         y_text = 0.95 if above else -1.35
 
-        # tick on axis
         ax.plot([x, x], [-0.12, 0.12], color=color, lw=2, zorder=2)
-
-        # leader
         ax.plot([x, x], [0.12 if above else -0.12, y_mark], color=color, lw=0.8, alpha=0.7)
 
         if meta["shape"] == "square":
@@ -249,7 +227,12 @@ def draw_verdict_axis(results: dict[str, dict]) -> None:
         elif meta["shape"] == "diamond":
             ax.add_patch(
                 MplPolygon(
-                    [(x, y_mark + 0.18), (x + 0.16, y_mark), (x, y_mark - 0.18), (x - 0.16, y_mark)],
+                    [
+                        (x, y_mark + 0.18),
+                        (x + 0.16, y_mark),
+                        (x, y_mark - 0.18),
+                        (x - 0.16, y_mark),
+                    ],
                     closed=True,
                     facecolor=color,
                     edgecolor=color,
@@ -269,7 +252,9 @@ def draw_verdict_axis(results: dict[str, dict]) -> None:
             )
 
         label = f"{ranks[key]}  {meta['label']}  ·  {sharpes[key]:.2f}"
-        ax.text(x, y_text, label, ha="center", va="center", fontsize=9, color=color, fontweight="600")
+        ax.text(
+            x, y_text, label, ha="center", va="center", fontsize=9, color=color, fontweight="600"
+        )
         if key == "qaoa" and ranks[key] == max(ranks.values()):
             ax.text(
                 x,
@@ -285,12 +270,12 @@ def draw_verdict_axis(results: dict[str, dict]) -> None:
     ax.set_ylim(-1.9, 1.6)
     ax.axis("off")
     fig.tight_layout(pad=0.3)
-    st.pyplot(fig, use_container_width=True)
+    st.pyplot(fig, use_container_width=True, clear_figure=True)
     plt.close(fig)
 
 
 def run_optimization(tickers: list[str], k: int, start: str, methods: list[str]) -> dict:
-    prices, returns, report = prepare_data(tickers, start=start, verbose=False)
+    _prices, returns, report = prepare_data(tickers, start=start, verbose=False)
     if returns is None or returns.empty or returns.shape[1] < 2:
         return {"error": "Données insuffisantes.", "report": report}
 
@@ -300,9 +285,9 @@ def run_optimization(tickers: list[str], k: int, start: str, methods: list[str])
             returns, max_assets=k, method="markowitz", n_random_subsets=60, seed=42
         )
         out["results"]["markowitz"] = {
-            "sharpe": r.sharpe,
-            "vol": r.volatility,
-            "ret": r.expected_return,
+            "sharpe": float(r.sharpe),
+            "vol": float(r.volatility),
+            "ret": float(r.expected_return),
             "weights": r.weights,
             "message": r.message,
         }
@@ -314,9 +299,9 @@ def run_optimization(tickers: list[str], k: int, start: str, methods: list[str])
             sa_config=SAConfig(n_steps=4000, seed=42, step_size=0.08),
         )
         out["results"]["sa"] = {
-            "sharpe": r.sharpe,
-            "vol": r.volatility,
-            "ret": r.expected_return,
+            "sharpe": float(r.sharpe),
+            "vol": float(r.volatility),
+            "ret": float(r.expected_return),
             "weights": r.weights,
             "message": r.message,
         }
@@ -327,9 +312,9 @@ def run_optimization(tickers: list[str], k: int, start: str, methods: list[str])
             config=QAOAConfig(p=2, max_assets=k, n_samples=256, n_restarts=3, seed=42),
         )
         out["results"]["qaoa"] = {
-            "sharpe": r.sharpe,
-            "vol": r.volatility,
-            "ret": r.expected_return,
+            "sharpe": float(r.sharpe),
+            "vol": float(r.volatility),
+            "ret": float(r.expected_return),
             "weights": r.weights,
             "message": r.message,
         }
@@ -339,15 +324,44 @@ def run_optimization(tickers: list[str], k: int, start: str, methods: list[str])
 def verdict_sentence(results: dict) -> str:
     if not results:
         return "Aucune méthode sélectionnée."
-    best = max(results.items(), key=lambda kv: kv[1]["sharpe"])
-    name = METHOD_META[best[0]]["label"]
-    if best[0] in ("markowitz", "sa") and "qaoa" in results:
-        if results["qaoa"]["sharpe"] < best[1]["sharpe"] - 0.05:
+    best_key, best_val = max(results.items(), key=lambda kv: kv[1]["sharpe"])
+    name = METHOD_META[best_key]["label"]
+    if best_key in ("markowitz", "sa") and "qaoa" in results:
+        if results["qaoa"]["sharpe"] < best_val["sharpe"] - 0.05:
             return (
                 f"Sur cet univers et ces contraintes, {name} l'emporte. "
                 f"L'écart du QAOA est documenté (proxy QUBO + calibration)."
             )
-    return f"Sur cette run, {name} obtient le meilleur Sharpe ({best[1]['sharpe']:.2f})."
+    return f"Sur cette run, {name} obtient le meilleur ratio de Sharpe ({best_val['sharpe']:.2f})."
+
+
+def _proof_dataframe(results: dict) -> pd.DataFrame:
+    """Tableau de preuves avec libellés complets (pas d'abréviations ambiguës)."""
+    rows = []
+    for key, r in sorted(results.items(), key=lambda kv: -kv[1]["sharpe"]):
+        meta = METHOD_META[key]
+        active = r["weights"][r["weights"] > 1e-4].sort_values(ascending=False)
+        assets = ", ".join(str(a) for a in active.index[:6])
+        rows.append(
+            {
+                "Méthode": f"{meta['symbol']} {meta['label']}",
+                "Ratio de Sharpe": round(r["sharpe"], 2),
+                "Volatilité": f"{r['vol'] * 100:.1f} %",
+                "Rendement annualisé": f"{r['ret'] * 100:.1f} %",
+                "Actifs retenus": assets,
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def _weights_dataframe(weights: pd.Series) -> pd.DataFrame:
+    w = weights[weights > 1e-4].sort_values(ascending=False)
+    return pd.DataFrame(
+        {
+            "Actif": [str(a) for a in w.index],
+            "Poids": [f"{float(x) * 100:.1f} %" for x in w.values],
+        }
+    )
 
 
 def main() -> None:
@@ -371,7 +385,6 @@ def main() -> None:
     )
     disclaimer()
 
-    # Navigation buttons
     c1, c2, c3 = st.columns(3)
     with c1:
         if st.button("Protocole", use_container_width=True):
@@ -391,30 +404,41 @@ def main() -> None:
         st.markdown("## Conditions de l'expérience")
         preset = st.selectbox("Preset d'univers", list(PRESETS.keys()))
         default_tickers = ", ".join(PRESETS[preset])
-        tickers_raw = st.text_area("Tickers (séparés par des virgules)", value=default_tickers, height=80)
-        tickers = [t.strip().upper() for t in tickers_raw.replace("\n", ",").split(",") if t.strip()]
+        tickers_raw = st.text_area(
+            "Tickers (séparés par des virgules)", value=default_tickers, height=80
+        )
+        tickers = [
+            t.strip().upper()
+            for t in tickers_raw.replace("\n", ",").split(",")
+            if t.strip()
+        ]
 
         col_a, col_b = st.columns(2)
         with col_a:
-            k = st.slider("Cardinalité K (max actifs)", min_value=2, max_value=min(12, max(2, len(tickers))), value=min(5, max(2, len(tickers))))
+            k = st.slider(
+                "Cardinalité K (nombre max d'actifs)",
+                min_value=2,
+                max_value=min(12, max(2, len(tickers))),
+                value=min(5, max(2, len(tickers))),
+            )
             start = st.text_input("Date de début", value="2019-01-01")
         with col_b:
             methods = st.multiselect(
                 "Méthodes",
                 options=["markowitz", "sa", "qaoa"],
                 default=["markowitz", "sa", "qaoa"],
-                format_func=lambda m: METHOD_META[m]["symbol"] + " " + METHOD_META[m]["label"],
+                format_func=lambda m: f"{METHOD_META[m]['symbol']} {METHOD_META[m]['label']}",
             )
 
         st.markdown(
             '<p class="marginalia">Le protocole fixe les règles avant de voir les résultats. '
-            "K limite le nombre d'actifs (contrainte discrète, NP-difficile).</p>",
+            "K limite le nombre d'actifs (contrainte discrète).</p>",
             unsafe_allow_html=True,
         )
 
         if st.button("Lancer le banc d'essai", type="primary"):
             if len(tickers) < 2:
-                st.error("Au moins 2 tickers requis.")
+                st.error("Au moins 2 tickers sont requis.")
             elif not methods:
                 st.error("Sélectionnez au moins une méthode.")
             else:
@@ -434,15 +458,19 @@ def main() -> None:
     elif page == "Verdict":
         data = st.session_state.run_data
         if not data or not data.get("results"):
-            st.info("Aucune run disponible. Configurez un protocole puis lancez le banc d'essai.")
+            st.info(
+                "Aucune run disponible. Configurez un protocole puis lancez le banc d'essai."
+            )
         else:
             results = data["results"]
             report = data.get("report")
             if report is not None:
-                st.caption(
-                    f"Actifs chargés : {len(report.succeeded)} réussis"
-                    + (f", {len(report.failed)} en échec" if report.failed else "")
-                )
+                n_ok = len(report.succeeded)
+                n_fail = len(report.failed) if report.failed else 0
+                caption = f"Actifs chargés : {n_ok} réussis"
+                if n_fail:
+                    caption += f", {n_fail} en échec"
+                st.caption(caption)
 
             st.markdown(
                 f'<p class="verdict-sentence">{verdict_sentence(results)}</p>',
@@ -450,44 +478,26 @@ def main() -> None:
             )
             draw_verdict_axis(results)
 
-            # Proof table
-            rows = []
-            for key, r in sorted(results.items(), key=lambda kv: -kv[1]["sharpe"]):
-                meta = METHOD_META[key]
-                active = r["weights"][r["weights"] > 1e-4].sort_values(ascending=False)
-                assets = ", ".join(f"{a}" for a in active.index[:6])
-                rows.append(
-                    f"<tr><td>{meta['symbol']} {meta['label']}</td>"
-                    f"<td>{r['sharpe']:.2f}</td>"
-                    f"<td>{r['vol']:.1%}</td>"
-                    f"<td>{r['ret']:.1%}</td>"
-                    f"<td>{assets}</td></tr>"
-                )
-            st.markdown(
-                "<table class='proof-table'><thead><tr>"
-                "<th>Méthode</th><th>Sharpe</th><th>Vol</th><th>Rend. esp.</th><th>Actifs</th>"
-                "</tr></thead><tbody>"
-                + "".join(rows)
-                + "</tbody></table>",
-                unsafe_allow_html=True,
-            )
+            st.markdown("##### Preuves")
+            proof = _proof_dataframe(results)
+            st.dataframe(proof, use_container_width=True, hide_index=True)
 
             if "qaoa" in results:
                 st.markdown(
-                    '<p class="marginalia">QAOA : le proxy QUBO est faiblement corrélé au vrai Sharpe '
-                    "(voir docs/methode_qaoa.md). La sous-performance éventuelle n'est pas masquée.</p>",
+                    '<p class="marginalia">QAOA : le proxy QUBO est faiblement corrélé au vrai '
+                    "ratio de Sharpe (voir docs/methode_qaoa.md). "
+                    "La sous-performance éventuelle n'est pas masquée.</p>",
                     unsafe_allow_html=True,
                 )
 
-            # Weights detail
             with st.expander("Allocations détaillées"):
                 for key, r in results.items():
                     meta = METHOD_META[key]
-                    w = r["weights"][r["weights"] > 1e-4].sort_values(ascending=False)
                     st.markdown(f"**{meta['symbol']} {meta['label']}**")
                     st.dataframe(
-                        pd.DataFrame({"poids": w.map(lambda x: f"{x:.1%}")}),
+                        _weights_dataframe(r["weights"]),
                         use_container_width=True,
+                        hide_index=True,
                     )
 
     # ── RÉPLICATION ───────────────────────────────────────────────────
@@ -498,7 +508,9 @@ def main() -> None:
         else:
             returns: pd.DataFrame = data["returns"]
             st.markdown("## Réplication historique")
-            st.caption("Walk-forward hors échantillon — la performance passée n'annonce pas la future.")
+            st.caption(
+                "Walk-forward hors échantillon — la performance passée n'annonce pas la future."
+            )
 
             window = st.selectbox(
                 "Fenêtre",
@@ -520,7 +532,9 @@ def main() -> None:
                 rets = returns.loc[a:b]
 
             if len(rets) < 320:
-                st.warning("Pas assez de jours dans cette fenêtre pour un walk-forward robuste.")
+                st.warning(
+                    "Pas assez de jours dans cette fenêtre pour un walk-forward robuste."
+                )
             else:
                 if st.button("Lancer la réplication", type="primary"):
                     with st.spinner("Backtest walk-forward…"):
@@ -535,23 +549,24 @@ def main() -> None:
                                     method=method,
                                     train_days=252,
                                     test_days=63,
-                                    sa_config=_SAConfig(n_steps=1500, seed=42),
+                                    sa_config=SAConfig(n_steps=1500, seed=42),
                                 )
                                 curves[method] = bt.equity_curve
                                 m = bt.metrics
                                 metrics_rows.append(
                                     {
-                                        "Méthode": METHOD_META[method]["symbol"]
-                                        + " "
-                                        + METHOD_META[method]["label"],
-                                        "Sharpe": round(m.sharpe, 2),
-                                        "Vol. ann.": f"{m.annualized_volatility:.1%}",
-                                        "Max DD": f"{m.max_drawdown:.1%}",
-                                        "Rend. ann.": f"{m.annualized_return:.1%}",
+                                        "Méthode": (
+                                            f"{METHOD_META[method]['symbol']} "
+                                            f"{METHOD_META[method]['label']}"
+                                        ),
+                                        "Ratio de Sharpe": round(m.sharpe, 2),
+                                        "Volatilité annualisée": f"{m.annualized_volatility * 100:.1f} %",
+                                        "Drawdown maximum": f"{m.max_drawdown * 100:.1f} %",
+                                        "Rendement annualisé": f"{m.annualized_return * 100:.1f} %",
                                     }
                                 )
                             except Exception as exc:
-                                st.warning(f"{method}: {exc}")
+                                st.warning(f"{METHOD_META[method]['label']}: {exc}")
 
                         if curves:
                             fig, ax = plt.subplots(figsize=(9, 4), dpi=130)
@@ -573,13 +588,18 @@ def main() -> None:
                             ax.spines["bottom"].set_color(RULE)
                             ax.tick_params(colors=MUTED)
                             fig.tight_layout()
-                            st.pyplot(fig, use_container_width=True)
+                            st.pyplot(fig, use_container_width=True, clear_figure=True)
                             plt.close(fig)
-                            st.dataframe(pd.DataFrame(metrics_rows), use_container_width=True, hide_index=True)
+                            st.dataframe(
+                                pd.DataFrame(metrics_rows),
+                                use_container_width=True,
+                                hide_index=True,
+                            )
 
             st.markdown(
-                '<p class="marginalia">Le QAOA n\'est pas rejoué en walk-forward ici (coût de calibration). '
-                "Comparaison hors échantillon centrée sur Markowitz vs recuit simulé.</p>",
+                '<p class="marginalia">Le QAOA n\'est pas rejoué en walk-forward ici '
+                "(coût de calibration). Comparaison hors échantillon centrée sur "
+                "Markowitz vs recuit simulé.</p>",
                 unsafe_allow_html=True,
             )
 
