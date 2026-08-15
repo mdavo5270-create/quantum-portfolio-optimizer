@@ -11,7 +11,7 @@ Cet outil tourne entièrement sur du matériel classique. Il aide à explorer de
 ## État d'avancement
 
 - [x] Phase 0 — Mise en place du projet
-- [ ] Phase 1 — Baseline classique (Markowitz)
+- [x] Phase 1 — Baseline classique (Markowitz)
 - [ ] Phase 2 — Moteur quantum-inspired v1 (recuit simulé)
 - [ ] Phase 3 — Backtesting
 - [ ] Phase 4 — QAOA simulé (si pertinent)
@@ -20,7 +20,7 @@ Cet outil tourne entièrement sur du matériel classique. Il aide à explorer de
 
 Voir `docs/TODO.md` pour le détail des tâches et `CHANGELOG.md` pour l'historique des versions.
 
-## Installation (préparation)
+## Installation
 
 ```bash
 git clone https://github.com/mdavo5270-create/quantum-portfolio-optimizer.git
@@ -30,13 +30,23 @@ source .venv/bin/activate   # Windows : .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-## Utilisation rapide (Phase 0)
+## Utilisation rapide
 
+### Vérifier l'environnement
 ```bash
 python -m src.hello_world
 ```
 
-Cela doit afficher un message de confirmation que l'environnement fonctionne.
+### Lancer les tests
+```bash
+pytest -v
+```
+
+### Démonstration Markowitz (4 actions réelles)
+```bash
+python examples/demo_markowitz.py
+```
+Télécharge l'historique d'AAPL, MSFT, GOOGL et AMZN puis affiche les poids optimaux (max Sharpe et min volatilité).
 
 ## Structure du projet
 
@@ -48,16 +58,24 @@ quantum-portfolio-optimizer/
 ├── .env.example
 ├── .gitignore
 ├── requirements.txt
+├── examples/
+│   └── demo_markowitz.py
 ├── src/
-│   ├── data/
-│   ├── optimizer/
-│   ├── classical_baseline/
+│   ├── data/               # récupération yfinance + rendements
+│   ├── classical_baseline/ # Markowitz (max Sharpe / min vol)
+│   ├── optimizer/          # (Phase 2) quantum-inspired
 │   ├── backtest/
 │   └── visualization/
 ├── tests/
 ├── notebooks/
 └── docs/
+    ├── TODO.md
+    └── methode_classique_markowitz.md
 ```
+
+## Documentation
+
+- Explication simple de Markowitz : [`docs/methode_classique_markowitz.md`](docs/methode_classique_markowitz.md)
 
 ## Licence
 
@@ -65,4 +83,4 @@ MIT — voir le fichier `LICENSE`.
 
 ## Contribution
 
-Projet en développement actif. Les commits et les branches de feature sont utilisés. Les tests automatiques (GitHub Actions) doivent passer avant toute fusion.
+Projet en développement actif. Les tests automatiques (GitHub Actions) doivent passer avant toute fusion.
