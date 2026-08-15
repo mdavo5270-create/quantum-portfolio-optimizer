@@ -8,7 +8,12 @@ Avertissement : ce n'est PAS un conseil financier.
 
 from __future__ import annotations
 
-import examples._bootstrap  # noqa: F401  — ajoute la racine au PYTHONPATH
+import sys
+from pathlib import Path
+
+_ROOT = Path(__file__).resolve().parents[1]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
 
 from src.data.market_data import prepare_data
 from src.optimizer.simulated_annealing import SAConfig, compare_with_markowitz
