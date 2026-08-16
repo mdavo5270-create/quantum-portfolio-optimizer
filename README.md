@@ -42,7 +42,8 @@ streamlit run app/streamlit_app.py
 pytest -v -m "not network"
 ```
 
-Guide pas à pas (sans jargon) : **[docs/guide_utilisateur.md](docs/guide_utilisateur.md)**
+Guide pas à pas (sans jargon) : **[docs/guide_utilisateur.md](docs/guide_utilisateur.md)**  
+Résumé exécutif : **[docs/resume_executif.md](docs/resume_executif.md)**
 
 ## Ce que fait l’outil
 
@@ -86,6 +87,7 @@ python examples/demo_cardinality_qaoa.py
 
 | Document | Public |
 |----------|--------|
+| [Résumé exécutif](docs/resume_executif.md) | Décideurs |
 | [Guide utilisateur](docs/guide_utilisateur.md) | Non technicien |
 | [Markowitz](docs/methode_classique_markowitz.md) | Méthode |
 | [Recuit simulé](docs/methode_recuit_simule.md) | Méthode |
